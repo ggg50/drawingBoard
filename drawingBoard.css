@@ -8,6 +8,12 @@ ul, ol {
   list-style: none;
 }
 
+#canvas {
+  position: fixed;
+  tip: 0;
+  left: 0;
+}
+
 .icon {
    width: 1em; height: 1em;
    vertical-align: -0.15em;
