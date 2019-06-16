@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,maximum-scale=1.0,minimum-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="./drawingBoard.css">
+  <script src="https://at.alicdn.com/t/font_1244408_0g272p5heepg.js"></script>
+  <title>DrawingBoard</title>
+</head>
+<body>
+  <canvas id="canvas" width="300" height="300"></canvas>
+  <div class="tools">
+    <div id="actions" class="actions">
+      <svg id="brush" class="icon active" aria-hidden="true">
+        <use xlink:href="#icon-pen"></use>
+      </svg>
+      <svg id="eraser" class="icon" aria-hidden="true">
+        <use xlink:href="#icon-eraser"></use>
+      </svg>
+    </div>
+
+    <div class="memory">
+      <svg id="download" class="icon" aria-hidden="true">
+        <use xlink:href="#icon-xiazai"></use>
+      </svg>
+      <svg class="icon" aria-hidden="true">
+        <use xlink:href="#icon-siglypharrowbackward"></use>
+      </svg>
+      <svg class="icon" aria-hidden="true">
+        <use xlink:href="#icon-siglypharrowforward"></use>
+      </svg>
+
+      <svg id="delete_content" class="icon" aria-hidden="true">
+        <use xlink:href="#icon-delete1"></use>
+      </svg>
+    </div>
+
+    <div class="line">
+      <div id="thin" class="thin"></div>
+      <div id="thick" class="thick"></div>
+    </div>
+  </div>
+  <ul id="color_picker"></ul>
+
+
+
+  <script>
+    var canvas = document.querySelector("canvas")
+    var content = canvas.getContext("2d");
+    var colors = {
+      "black": "#000000",
+      "red": "#ea3a48",
+      "blue": "#418df7",
+      "green": "#69d572",
+      "grey": "#d9d9d9"
+    };
+    var colors_dom_list = [];
+
+    var drawing_color = "black";
+    var using = false;
+    var eraserEnabled = false;
+    var line_width_base = 4;
+
+    autoSetCanvasSize(canvas);
+
+
+    for (var color in colors) {
+      var c = elt("li", {
+        onclick: function(event) {
+          color_switching(colors_dom_list, event.target.parentNode);
+          drawing_color = event.target.style.backgroundColor;
+        }
+      });
+      c.style.backgroundColor = colors[color];
+
+      var color_wrapper = elt("div", {
+        className: "color_wrapper"
+      }, c);
+      color_wrapper.style.borderBottom = "3px solid" + colors[color];
+
+      colors_dom_list.push(color_wrapper);
+      color_picker.appendChild(color_wrapper);
+    }
+
+    brush.onclick = function() {
+      eraserEnabled = false;
+      brush.classList.add("active");
+      eraser.classList.remove("active");
+
+    }
+    eraser.onclick = function() {
+      eraserEnabled = true;
+      eraser.classList.add("active");
+      brush.classList.remove("active");
+    };
+    thin.onclick = function() {
+      line_width_base = 6;
+    }
+    thick.onclick = function() {
+      line_width_base = 12;
+    }
+
+    delete_content.onclick = function() {
+      content.clearRect(0, 0, canvas.width, canvas.height)
+    }
+
+    download.onclick = function() {
+      var url = canvas.toDataURL("image/png");
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "image";
+      a.target = "_blank";
+      a.click();
+    }
+
+    if(document.body.ontouchstart === undefined){
+
+        canvas.onmousedown = function(event) {
+          using = true;
+          var x = event.clientX;
+          var y = event.clientY;
+          if(eraserEnabled) {
+            content.clearRect(x-5, y-5, 10, 10);
+          } else {
+            lastPoint.x = x;
+            lastPoint.y = y;
+          };
+        };
+
+        canvas.onmousemove = function(event) {
+          var x = event.clientX;
+          var y = event.clientY;
+
+          if(using){
+            if(eraserEnabled) {
+              content.clearRect(x-5, y-5, 10, 10);
+             } else {
+              content.beginPath();
+              content.lineWidth = line_width_base;
+              content.strokeStyle = drawing_color;
+              content.moveTo(lastPoint.x, lastPoint.y);
+              content.lineTo(x, y);
+              content.stroke();
+              content.closePath();
+              lastPoint.x = x;
+              lastPoint.y = y;
+            }
+          }
+        };
+
+        canvas.onmouseup = function(event) {
+          using = false;
+        }
+    } else {
+      canvas.ontouchstart = function() {
+        using = true;
+        var x = event.clientX;
+        var y = event.clientY;
+        if(eraserEnabled) {
+          content.clearRect(x-5, y-5, 10, 10);
+        } else {
+          lastPoint.x = x;
+          lastPoint.y = y;
+        };
+      };
+
+      canvas.ontouchmove = function(event) {
+        var x = event.touches[0].clientX;
+        var y = event.touches[0].clientY;
+
+        if(using){
+          if(eraserEnabled) {
+            content.clearRect(x-5, y-5, 10, 10);
+           } else {
+            content.beginPath();
+            content.lineWidth = line_width_base;
+            content.strokeStyle = drawing_color;
+            content.moveTo(lastPoint.x, lastPoint.y);
+            content.lineTo(x, y);
+            content.stroke();
+            content.closePath();
+            lastPoint.x = x;
+            lastPoint.y = y;
+          }
+        }
+      };
+
+      canvas.ontouchend = function(event) {
+        using = false;
+      }
+    }
+
+
+    var lastPoint = {
+      "x": undefined,
+      "y": undefined
+    };
+
+
+
+    function autoSetCanvasSize(element) {
+      setCanvasSize(element);
+      window.onresize = function() {
+        setCanvasSize(element);
+      }
+    };
+
+    function setCanvasSize(element) {
+      element.width = document.documentElement.clientWidth;
+      element.height = document.documentElement.clientHeight;
+    };
+
+
+
+    function elt(type, props, ...children) {
+      let dom = document.createElement(type);
+      if (props) Object.assign(dom, props);
+      for (let child of children) {
+        if (typeof child == Number) child = String(child);
+        if (typeof child != "string") dom.appendChild(child);
+        else dom.appendChild(document.createTextNode(child));
+        }
+      return dom;
+    }
+
+    function color_switching(dom_list, dom) {
+      dom_list.forEach(d => d.className = "color_wrapper")
+      dom.className = "color_wrapper active";
+    }
+
+  </script>
+</body>
+</html>
