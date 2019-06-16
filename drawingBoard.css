@@ -10,7 +10,7 @@ ul, ol {
 
 #canvas {
   position: fixed;
-  tip: 0;
+  top: 0;
   left: 0;
 }
 
